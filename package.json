@@ -1,0 +1,28 @@
+{
+  "name": "bearer-auth",
+  "version": "0.1.0",
+  "description": "Bearer Tokens Exchange logic for Authorization in OAuth 2.0",
+  "main": "dist/bearer-auth.js",
+  "scripts": {
+    "preinstall": "npm install autodts",
+    "postinstall": "autodts link",
+    "prepublish": "tsc && autodts generate"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eberlitz/bearer-auth.git"
+  },
+  "author": "Eduardo Eidelwein Berlitz",
+  "license": "MIT",
+  "typescript": {
+    "definition": "index.d.ts"
+  },
+  "bugs": {
+    "url": "https://github.com/eberlitz/bearer-auth/issues"
+  },
+  "homepage": "https://github.com/eberlitz/bearer-auth#readme",
+  "devDependencies": {
+    "@lib/autodts-generator": "0.0.2",
+    "typescript": "^1.7.5"
+  }
+}
