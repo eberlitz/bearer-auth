@@ -284,7 +284,7 @@ export class AuthService {
 
 
 
-    _authorizeRequest2(httpConfig: IRequestConfig): IRequestConfig | PromiseLike<IRequestConfig> {
+    _authorizeRequest(httpConfig: IRequestConfig): IRequestConfig | PromiseLike<IRequestConfig> {
         var deferred = AuthService.$q.defer();
 
         let continueRequest = (access_token?: string) => {
