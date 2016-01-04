@@ -1,5 +1,3 @@
-/// <reference path = "../typings/auto.d.ts" />
-
 export interface IAuthorizeOptions {
     username?: string;
     password?: string;
@@ -20,7 +18,7 @@ export interface IAuthorizationOptions {
      * Se a função retornar qualquer coisa ou uma promise rejeitada então a requisição original será retornada com erro.
      */
     resourceOwnerCredentialsFn?: (options: IAuthorizationOptions) => any | PromiseLike<any>;
-    clientCredentialsFn?: (options: IAuthorizationOptions) => any | PromiseLike<any>;
+    clientCredentialsFn?: (authService: AuthService, options: IAuthorizationOptions) => any | PromiseLike<any>;
     clientSecret?: string;
     persistent?: boolean;
 }
@@ -71,6 +69,12 @@ export class AuthService {
         private options: IAuthorizationOptions
     ) {
         this.isPersistent = !!AuthService.$storage.getItem(`${options.name}-isPersistent`);
+        this.options = <IAuthorizationOptions>extend(options, {
+            clientCredentialsFn: (authService: AuthService, options: IAuthorizationOptions) => {
+                // Função padrão para Self-Authorize
+                return authService.authorize();
+            }
+        });
     }
 
     /**
@@ -80,11 +84,7 @@ export class AuthService {
         //console.log(this.options.name, 'authorize', this.options);
         var me = this;
         options = <IAuthorizeOptions>extend({
-            authorizeUrl: me.options.url + 'token',
-            clientCredentialsFn: () => {
-                // Função padrão para Self-Authorize
-                return this.authorize();
-            }
+            authorizeUrl: me.options.url + 'token'
         }, me.options, options);
         var deferred = AuthService.$q.defer();
 
@@ -264,14 +264,14 @@ export class AuthService {
         if (this.options.resourceOwnerCredentialsFn) { // para ser resource_owner deve-se informar uma função
             let roCredentials = this.options.resourceOwnerCredentialsFn ? this.options.resourceOwnerCredentialsFn(this.options) : undefined;
             if (isPromise(roCredentials)) {
-                roCredentials.then(() => deferred.resolve(), deferred.reject());
+                roCredentials.then(() => deferred.resolve(), () => deferred.reject());
             } else {
                 deferred.reject();
             }
         } else if (this.options.clientId && this.options.clientSecret) { // para client deve conter o id e o secret
-            let cliCredentials = this.options.clientCredentialsFn ? this.options.clientCredentialsFn(this.options) : undefined;
+            let cliCredentials = this.options.clientCredentialsFn ? this.options.clientCredentialsFn(this, this.options) : undefined;
             if (isPromise(cliCredentials)) {
-                cliCredentials.then(() => deferred.resolve(), deferred.reject());
+                cliCredentials.then(() => deferred.resolve(), () => deferred.reject());
             } else {
                 deferred.reject();
             }
@@ -311,7 +311,7 @@ export class AuthService {
             if (this._hasRefreshToken()) {
                 // refreshTokens()
                 this._requestAccessToken()
-                // .sucesso(()=>{
+                    // .sucesso(()=>{
                     .then(() => {
                         // addAccessTokenToHeader()
                         // return continueRequest()
@@ -323,7 +323,7 @@ export class AuthService {
                             this.removeToken();
                             // requestCredentials()
                             this._requestCredentials()
-                            // deve resolver a promise para self-authorize
+                                // deve resolver a promise para self-authorize
                                 .then(() => {
                                     continueRequest(this.access_token);
                                 },
@@ -340,7 +340,7 @@ export class AuthService {
             } else {
                 // requestCredentials()
                 this._requestCredentials()
-                // deve resolver a promise para self-authorize
+                    // deve resolver a promise para self-authorize
                     .then(() => {
                         continueRequest(this.access_token);
                     },
