@@ -1,6 +1,6 @@
 {
   "name": "bearer-auth",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Bearer Tokens Exchange logic for Authorization in OAuth 2.0",
   "main": "dist/bearer-auth.js",
   "scripts": {
