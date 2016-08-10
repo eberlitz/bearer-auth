@@ -34,7 +34,7 @@ export interface IAuthStorage {
 
 export interface IRequestConfig {
     headers?: {
-        [requestType: string]: string|(() => string);
+        [requestType: string]: string | (() => string);
     }
 }
 
@@ -99,19 +99,24 @@ export class AuthService {
         var body: string[] = [];
         for (var prop in data) {
             if ((<any>data)[prop] != null) {
-                body.push(prop + '=' + (<any>data)[prop]);
-            };
-        };
+                body.push(prop + '=' + encodeURIComponent((<any>data)[prop]));
+            }
+        }
 
         config = extend({
             ignoreAuthInterceptor: true
         }, config);
 
+        if (!config.headers) {
+            config.headers = {};
+        }
+        config.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
+
         AuthService.$http.post(options.authorizeUrl, body.join('&'), config)
-            .then(function(response: any) {
+            .then(function (response: any) {
                 me.setToken(response.data, !!options.persistent);
                 deferred.resolve(response.data);
-            }, function(response: any) {
+            }, function (response: any) {
                 deferred.reject(response.data);
             });
 
@@ -126,7 +131,7 @@ export class AuthService {
         //var storage = me.isPersistent ? $window.localStorage : $window.sessionStorage;
 
         var propsToRemove = ['access_token', 'refresh_token', 'expires_at'];
-        propsToRemove.map(function(prop) {
+        propsToRemove.map(function (prop) {
             AuthService.$storage.removeItem(me.options.name + '-' + prop, me.isPersistent);
         });
     }
@@ -177,7 +182,7 @@ export class AuthService {
         return AuthService.$storage.getItem(propName);
         // $window.sessionStorage.getItem(propName) || $window.localStorage.getItem(propName);
     }
-    
+
     /**
      * Saves an authorization token to Storage.
      */
@@ -231,22 +236,24 @@ export class AuthService {
         var body: string[] = [];
         for (var prop in data) {
             if ((<any>data)[prop] != null) {
-                body.push(prop + '=' + (<any>data)[prop]);
-            };
-        };
+                body.push(prop + '=' + encodeURIComponent((<any>data)[prop]));
+            }
+        }
 
         var refreshUrl = options.authorizeUrl;
         if (!me._hasPendingRequests()) {
             me._addPendingRequest(deferred);
             AuthService.$http.post(refreshUrl, body.join('&'), {
-                ignoreAuthInterceptor: true
-            })
-                .then(function(response: any) {
-                    me.setToken(response.data, !!options.persistent);
-                    me._resolveAllPendingRequest(true, arguments);
-                }, function() {
-                    me._resolveAllPendingRequest(false, arguments);
-                });
+                ignoreAuthInterceptor: true,
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                }
+            }).then(function (response: any) {
+                me.setToken(response.data, !!options.persistent);
+                me._resolveAllPendingRequest(true, arguments);
+            }, function () {
+                me._resolveAllPendingRequest(false, arguments);
+            });
         } else {
             me._addPendingRequest(deferred);
         }
@@ -367,7 +374,7 @@ export class AuthService {
 
     _resolveAllPendingRequest(isSuccess: boolean, arglist: IArguments) {
         var me = this;
-        (me._pendingRequests || []).map(function(deferred) {
+        (me._pendingRequests || []).map(function (deferred) {
             (<any>deferred)[isSuccess ? 'resolve' : 'reject'].call(deferred, arglist);
         });
         delete me._pendingRequests;
